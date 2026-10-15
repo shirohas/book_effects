@@ -88,3 +88,87 @@ body {
   left: calc(-1 * var(--canvas-padding));
   z-index: 100;
 }
+
+.single-page-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 101;
+  pointer-events: none;
+}
+
+#book.is-turning #pages {
+  visibility: hidden;
+}
+
+@media (max-width: 700px) {
+  #book-viewport {
+    box-sizing: border-box;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding: 16px 12px 24px;
+  }
+
+  #book[data-layout="single"] {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: 520px;
+    height: auto;
+    aspect-ratio: 5 / 7;
+    margin: 0 auto;
+    transform: none;
+    touch-action: pan-y;
+  }
+
+  #book[data-layout="single"] #pages {
+    position: absolute;
+    inset: 0;
+  }
+
+  #book[data-layout="single"] #pageflip-canvas,
+  #book[data-layout="single"] #pages section {
+    display: none;
+  }
+
+  #book[data-layout="single"] #pages section.is-current {
+    display: block;
+    position: relative;
+    inset: auto;
+    width: 100% !important;
+    height: 100%;
+    box-shadow: 0 8px 24px #0003;
+  }
+
+  #book[data-layout="single"] #pages section > div {
+    display: none;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    touch-action: pan-y;
+    padding: 24px 0;
+    font-size: 17px;
+  }
+
+  #book[data-layout="single"] #pages [data-face="front"] > .page-front,
+  #book[data-layout="single"] #pages [data-face="back"] > .page-back {
+    display: block;
+  }
+
+  #book[data-layout="single"] #pages p,
+  #book[data-layout="single"] #pages h2 {
+    padding: 6px 24px;
+    line-height: 1.7;
+    text-align: left;
+  }
+
+  #book[data-layout="single"] #pages .cover {
+    padding-top: 60px;
+  }
+
+  #book[data-layout="single"] #pages .cover h2 {
+    font-size: clamp(28px, 8vw, 38px);
+  }
+
+}

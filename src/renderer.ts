@@ -99,8 +99,8 @@ export function drawFlip(context: CanvasRenderingContext2D, progress: number, te
 			const width = Math.min(1, foldWidth - x);
 			const t = 1 - Math.sqrt(Math.max(0, 1 - x / foldWidth));
 			const outdent = verticalOutdent * (1 + 2 * t - 3 * t * t);
-			context.drawImage(texture, x * PAGE_WIDTH / foldWidth, 0,
-				width * PAGE_WIDTH / foldWidth, PAGE_HEIGHT,
+			context.drawImage(texture, x * texture.naturalWidth / foldWidth, 0,
+				width * texture.naturalWidth / foldWidth, texture.naturalHeight,
 				foldX - foldWidth + x, -outdent, width, PAGE_HEIGHT + outdent * 2);
 		}
 		context.globalAlpha = 0.16 * strength;

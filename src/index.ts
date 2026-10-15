@@ -3,6 +3,7 @@
 import { applyBookLayout, fitBookToViewport, BOOK_HEIGHT, BOOK_WIDTH, CANVAS_PADDING, PAGE_HEIGHT, PAGE_WIDTH, PAGE_Y } from "./layout";
 import { drawFlip } from "./renderer";
 import { createPageTexture } from "./page-texture";
+import { createSinglePageTurn } from "./single-page-turn";
 
 type Flip = {
 	element: HTMLElement;
@@ -30,16 +31,60 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 		element.style.zIndex = String(pages.length - index);
 		return { element, progress: 1, target: 1 };
 	});
-	void document.fonts.ready.then(() => Promise.all(flips.map(async (flip) => {
-		const back = flip.element.querySelector<HTMLElement>(".page-back");
-		if (!back) throw new Error("Page is missing its reverse face.");
-		flip.backTexture = await createPageTexture(back);
-	}))).catch(console.error);
 
 	let currentPage = 0;
 	let activeFlip: number | null = null;
 	let activePointer: number | null = null;
 	let mouseX = 0;
+	const mobileQuery = window.matchMedia("(max-width: 700px)");
+	let singlePage = false;
+	let faceIndex = 0;
+
+	function showFace() {
+		pages.forEach((page, index) => {
+			page.classList.toggle("is-current", index === Math.floor(faceIndex / 2));
+			page.dataset.face = faceIndex % 2 === 0 ? "front" : "back";
+		});
+	}
+
+	const singleTurn = createSinglePageTurn(book, {
+		getIndex: () => faceIndex,
+		setIndex: (index) => { faceIndex = index; showFace(); },
+		count: pages.length * 2,
+		isEnabled: () => singlePage,
+	});
+
+	function updateMode() {
+		singleTurn.reset();
+		if (activePointer !== null && book.hasPointerCapture(activePointer)) {
+			book.releasePointerCapture(activePointer);
+		}
+		activeFlip = null;
+		activePointer = null;
+		if (mobileQuery.matches && !singlePage) {
+			faceIndex = Math.max(0, currentPage * 2 - 1);
+		} else if (!mobileQuery.matches && singlePage) {
+			currentPage = Math.floor((faceIndex + 1) / 2);
+		}
+		singlePage = mobileQuery.matches;
+		book.dataset.layout = singlePage ? "single" : "spread";
+		if (!singlePage) {
+			void document.fonts.ready.then(async () => {
+				if (singlePage) return;
+				await Promise.all(flips.map(async (flip) => {
+					const back = flip.element.querySelector<HTMLElement>(".page-back");
+					if (!back) throw new Error("Page is missing its reverse face.");
+					flip.backTexture = await createPageTexture(back);
+				}));
+			}).catch(console.error);
+		}
+		flips.forEach((flip, index) => {
+			flip.progress = flip.target = index < currentPage ? -1 : 1;
+		});
+		showFace();
+	}
+	mobileQuery.addEventListener("change", updateMode);
+	updateMode();
 
 	function getPosition(event: PointerEvent) {
 		const bounds = book.getBoundingClientRect();
@@ -56,6 +101,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 	}
 
 	function handlePointerDown(event: PointerEvent) {
+		if (singlePage) return;
 		if (event.button !== 0 || activeFlip !== null) return;
 		if (flips.some((flip) => flip.progress !== flip.target)) return;
 		const { x, y } = getPosition(event);
@@ -74,6 +120,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 	}
 
 	function handlePointerUp(event: PointerEvent) {
+		if (singlePage) return;
 		if (activeFlip === null || event.pointerId !== activePointer) return;
 		mouseX = getPosition(event).x;
 		const turned = mouseX < 0;
@@ -95,6 +142,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 	}
 
 	function render() {
+		if (singlePage) return;
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		flips.forEach((flip, index) => {
 			const dragging = activeFlip === index;
@@ -136,6 +184,8 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 
 	return () => {
 		window.clearInterval(timer);
+		singleTurn.dispose();
+		mobileQuery.removeEventListener("change", updateMode);
 		disposeLayout();
 		book.removeEventListener("pointermove", handlePointerMove);
 		book.removeEventListener("pointerdown", handlePointerDown);
