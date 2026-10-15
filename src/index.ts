@@ -57,6 +57,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 
 	function handlePointerDown(event: PointerEvent) {
 		if (event.button !== 0 || activeFlip !== null) return;
+		if (flips.some((flip) => flip.progress !== flip.target)) return;
 		const { x, y } = getPosition(event);
 		if (Math.abs(x) >= PAGE_WIDTH || y < 0 || y > PAGE_HEIGHT) return;
 
@@ -95,10 +96,6 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 
 	function render() {
 		context.clearRect(0, 0, canvas.width, canvas.height);
-		// Paint the settled stack first so an active sheet always appears above it.
-		const settled = flips.filter((flip) => flip.progress === -1);
-		const leftPage = settled[settled.length - 1];
-		if (leftPage) drawFlip(context, -1, leftPage.backTexture);
 		flips.forEach((flip, index) => {
 			const dragging = activeFlip === index;
 			if (dragging) {
@@ -111,7 +108,20 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 			}
 			const visibleWidth = PAGE_WIDTH * (1 + flip.progress) / 2;
 			flip.element.style.width = `${visibleWidth}px`;
-			if (dragging || Math.abs(flip.progress) < 1) {
+		});
+
+		// Center a closed cover; smoothly expand to a spread as it opens.
+		const frontClosed = (1 + flips[0].progress) / 2;
+		const backClosed = (1 - flips[flips.length - 1].progress) / 2;
+		book.style.setProperty("--book-offset", `${PAGE_WIDTH / 2 * (backClosed - frontClosed)}px`);
+		book.dataset.state = frontClosed === 1 ? "front-cover" : backClosed === 1 ? "back-cover" : "spread";
+
+		// Update positions before painting, including the frame a sheet settles.
+		const settled = flips.filter((flip) => flip.progress === -1);
+		const leftPage = settled[settled.length - 1];
+		if (leftPage) drawFlip(context, -1, leftPage.backTexture);
+		flips.forEach((flip, index) => {
+			if (activeFlip === index || Math.abs(flip.progress) < 1) {
 				drawFlip(context, flip.progress, flip.backTexture);
 			}
 		});
