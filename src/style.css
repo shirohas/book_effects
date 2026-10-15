@@ -48,6 +48,9 @@ body {
   height: var(--page-height);
   font-size: 12px;
 }
+#pages section > .page-back {
+  display: none;
+}
 #pages section p,
 #pages section h2 {
   padding: 3px 35px;

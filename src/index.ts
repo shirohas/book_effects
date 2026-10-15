@@ -2,11 +2,13 @@
 
 import { applyBookLayout, fitBookToViewport, BOOK_HEIGHT, BOOK_WIDTH, CANVAS_PADDING, PAGE_HEIGHT, PAGE_WIDTH, PAGE_Y } from "./layout";
 import { drawFlip } from "./renderer";
+import { createPageTexture } from "./page-texture";
 
 type Flip = {
 	element: HTMLElement;
 	progress: number;
 	target: number;
+	backTexture?: HTMLImageElement;
 };
 
 const FPS = 60;
@@ -28,6 +30,11 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 		element.style.zIndex = String(pages.length - index);
 		return { element, progress: 1, target: 1 };
 	});
+	void document.fonts.ready.then(() => Promise.all(flips.map(async (flip) => {
+		const back = flip.element.querySelector<HTMLElement>(".page-back");
+		if (!back) throw new Error("Page is missing its reverse face.");
+		flip.backTexture = await createPageTexture(back);
+	}))).catch(console.error);
 
 	let currentPage = 0;
 	let activeFlip: number | null = null;
@@ -55,7 +62,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 
 		if (x < 0 && currentPage > 0) {
 			activeFlip = currentPage - 1;
-		} else if (x > 0 && currentPage < flips.length - 1) {
+		} else if (x > 0 && currentPage < flips.length) {
 			activeFlip = currentPage;
 		}
 		if (activeFlip === null) return;
@@ -88,6 +95,10 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 
 	function render() {
 		context.clearRect(0, 0, canvas.width, canvas.height);
+		// Paint the settled stack first so an active sheet always appears above it.
+		const settled = flips.filter((flip) => flip.progress === -1);
+		const leftPage = settled[settled.length - 1];
+		if (leftPage) drawFlip(context, -1, leftPage.backTexture);
 		flips.forEach((flip, index) => {
 			const dragging = activeFlip === index;
 			if (dragging) {
@@ -101,7 +112,7 @@ function initializeBook(book: HTMLElement, canvas: HTMLCanvasElement, viewport: 
 			const visibleWidth = PAGE_WIDTH * (1 + flip.progress) / 2;
 			flip.element.style.width = `${visibleWidth}px`;
 			if (dragging || Math.abs(flip.progress) < 1) {
-				drawFlip(context, flip.progress);
+				drawFlip(context, flip.progress, flip.backTexture);
 			}
 		});
 	}

@@ -1,6 +1,6 @@
 import { BOOK_WIDTH, CANVAS_PADDING, PAGE_HEIGHT, PAGE_WIDTH, PAGE_Y } from "./layout";
 
-export function drawFlip(context: CanvasRenderingContext2D, progress: number) {
+export function drawFlip(context: CanvasRenderingContext2D, progress: number, texture?: HTMLImageElement) {
 	const strength = 1 - Math.abs(progress);
 	const foldWidth = PAGE_WIDTH * 0.5 * (1 - progress);
 
@@ -91,6 +91,23 @@ export function drawFlip(context: CanvasRenderingContext2D, progress: number) {
 	context.quadraticCurveTo(foldX, -verticalOutdent * 2, foldX, 0);
 
 	context.fill();
+	if (texture && foldWidth > 0) {
+		context.save();
+		context.clip();
+		// The readable reverse face follows the curved top and bottom edges.
+		for (let x = 0; x < foldWidth; x += 1) {
+			const width = Math.min(1, foldWidth - x);
+			const t = 1 - Math.sqrt(Math.max(0, 1 - x / foldWidth));
+			const outdent = verticalOutdent * (1 + 2 * t - 3 * t * t);
+			context.drawImage(texture, x * PAGE_WIDTH / foldWidth, 0,
+				width * PAGE_WIDTH / foldWidth, PAGE_HEIGHT,
+				foldX - foldWidth + x, -outdent, width, PAGE_HEIGHT + outdent * 2);
+		}
+		context.globalAlpha = 0.16 * strength;
+		context.fillStyle = foldGradient;
+		context.fill();
+		context.restore();
+	}
 	context.stroke();
 
 	context.restore();
