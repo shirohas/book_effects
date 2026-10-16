@@ -10,6 +10,8 @@ bun run build
 
 [Propsと利用方法](packages/page-flip/README.md) / [サンプル](src/App.tsx)
 
+[図解付き実装ドキュメント（Vivliostyle）](docs/README.md)も用意しています。`bun run docs:build`でPDF、`bun run docs:preview`でプレビューを生成できます。
+
 `bun run build`はTypeScriptの型チェックとデモのビルドを実行します。パッケージはワークスペース内のソース参照用で、npm公開用ビルドはまだ含みません。
 
 ブラウザ回帰テストはChromeのCDPとNode.jsのWebSocketを利用します。別々のターミナルで以下を起動してください。

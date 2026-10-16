@@ -6,12 +6,16 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome lint ./src ./packages",
     "format": "biome format ./src ./packages",
-    "format:fix": "biome format ./src ./packages --write"
+    "format:fix": "biome format ./src ./packages --write",
+    "docs:assets": "node docs/scripts/generate-assets.mjs",
+    "docs:preview": "vivliostyle preview -c docs/vivliostyle.config.js",
+    "docs:build": "vivliostyle build -c docs/vivliostyle.config.js"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vivliostyle/cli": "11.3.3",
     "typescript": "^7.0.2",
     "vite": "^6.2.2"
   },
