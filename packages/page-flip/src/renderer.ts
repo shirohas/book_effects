@@ -1,6 +1,13 @@
-import { BOOK_WIDTH, CANVAS_PADDING, PAGE_HEIGHT, PAGE_WIDTH, PAGE_Y } from "./layout";
+import type { BookLayout } from "./layout";
 
-export function drawFlip(context: CanvasRenderingContext2D, progress: number, texture?: HTMLImageElement) {
+export const drawFlip = (
+	context: CanvasRenderingContext2D,
+	progress: number,
+	layout: BookLayout,
+	texture?: HTMLImageElement,
+) => {
+	const { BOOK_WIDTH, CANVAS_PADDING, PAGE_HEIGHT, PAGE_WIDTH, PAGE_Y } =
+		layout;
 	const strength = 1 - Math.abs(progress);
 	const foldWidth = PAGE_WIDTH * 0.5 * (1 - progress);
 
@@ -99,9 +106,17 @@ export function drawFlip(context: CanvasRenderingContext2D, progress: number, te
 			const width = Math.min(1, foldWidth - x);
 			const t = 1 - Math.sqrt(Math.max(0, 1 - x / foldWidth));
 			const outdent = verticalOutdent * (1 + 2 * t - 3 * t * t);
-			context.drawImage(texture, x * texture.naturalWidth / foldWidth, 0,
-				width * texture.naturalWidth / foldWidth, texture.naturalHeight,
-				foldX - foldWidth + x, -outdent, width, PAGE_HEIGHT + outdent * 2);
+			context.drawImage(
+				texture,
+				(x * texture.naturalWidth) / foldWidth,
+				0,
+				(width * texture.naturalWidth) / foldWidth,
+				texture.naturalHeight,
+				foldX - foldWidth + x,
+				-outdent,
+				width,
+				PAGE_HEIGHT + outdent * 2,
+			);
 		}
 		context.globalAlpha = 0.16 * strength;
 		context.fillStyle = foldGradient;
@@ -111,4 +126,4 @@ export function drawFlip(context: CanvasRenderingContext2D, progress: number, te
 	context.stroke();
 
 	context.restore();
-}
+};

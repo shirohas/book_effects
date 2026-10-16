@@ -1,8 +1,26 @@
 {
+  "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint ./src ./packages",
+    "format": "biome format ./src ./packages",
+    "format:fix": "biome format ./src ./packages --write"
+  },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
     "vite": "^6.2.2"
   },
-  "scripts": {
-    "start": "vite"
-  }
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@book-effects/page-flip": "workspace:*"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

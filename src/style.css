@@ -1,174 +1,59 @@
-body,
-h2,
-p {
-  margin: 0;
-  padding: 0;
-}
-
 body {
-  background-color: #444;
-  color: #333;
-  font-family: Helvetica, sans-serif;
+	margin: 0;
+	background: #444;
+	color: #333;
+	font-family: Helvetica, sans-serif;
 }
-
-#book-viewport {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
+.demo-page {
+	box-sizing: border-box;
+	min-height: 100%;
+	padding: 1px 0;
+	font-size: 12px;
 }
-
-#book {
-  position: absolute;
-  width: var(--book-width);
-  height: var(--book-height);
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(var(--book-scale, 1)) translateX(var(--book-offset, calc(-0.5 * var(--page-width))));
-  touch-action: none;
-  user-select: none;
+.demo-page h2,
+.demo-page p {
+	margin: 0;
+	padding: 3px 35px;
+	line-height: 1.4;
+	text-align: justify;
 }
-
-#pages section {
-  background-color: white;
-  display: block;
-  width: var(--page-width);
-  height: var(--page-height);
-  position: absolute;
-  left: 50%;
-  top: var(--page-top);
-  overflow: hidden;
+.demo-page h2 {
+	margin: 15px 0 10px;
 }
-#pages section > div {
-  display: block;
-  width: var(--page-width);
-  height: var(--page-height);
-  font-size: 12px;
+.demo-page.cover {
+	padding-top: 100px;
+	background: #203c46;
+	color: #f3e5bf;
 }
-#pages section > .page-back {
-  display: none;
+.demo-page.cover h2 {
+	margin: 28px 0;
+	font-family: Georgia, serif;
+	font-size: 38px;
+	text-align: left;
 }
-#pages section p,
-#pages section h2 {
-  padding: 3px 35px;
-  line-height: 1.4em;
-  text-align: justify;
+.demo-page.cover p {
+	text-align: left;
 }
-#pages section h2 {
-  margin: 15px 0 10px;
+.demo-page .cover-label {
+	letter-spacing: 3px;
 }
-
-#pages section > .cover {
-  box-sizing: border-box;
-  padding-top: 100px;
-  background: #203c46;
-  color: #f3e5bf;
+.demo-page .cover-hint {
+	margin-top: 80px;
+	font-size: 11px;
 }
-#pages .cover h2 {
-  margin: 28px 0;
-  font-family: Georgia, serif;
-  font-size: 38px;
-  text-align: left;
+.demo-book[data-layout="single"] .demo-page {
+	padding: 24px 0;
+	font-size: 17px;
 }
-#pages .cover p {
-  text-align: left;
+.demo-book[data-layout="single"] .demo-page p,
+.demo-book[data-layout="single"] .demo-page h2 {
+	padding: 6px 24px;
+	line-height: 1.7;
+	text-align: left;
 }
-#pages .cover .cover-label {
-  letter-spacing: 3px;
+.demo-book[data-layout="single"] .demo-page.cover {
+	padding-top: 60px;
 }
-#pages .cover .cover-hint {
-  margin-top: 80px;
-  font-size: 11px;
-}
-
-#pageflip-canvas {
-  position: absolute;
-  top: calc(-1 * var(--canvas-padding));
-  left: calc(-1 * var(--canvas-padding));
-  z-index: 100;
-}
-
-.single-page-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 101;
-  pointer-events: none;
-}
-
-#book.is-turning #pages {
-  visibility: hidden;
-}
-
-@media (max-width: 700px) {
-  #book-viewport {
-    box-sizing: border-box;
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-    padding: 16px 12px 24px;
-  }
-
-  #book[data-layout="single"] {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    max-width: 520px;
-    height: auto;
-    aspect-ratio: 5 / 7;
-    margin: 0 auto;
-    transform: none;
-    touch-action: pan-y;
-  }
-
-  #book[data-layout="single"] #pages {
-    position: absolute;
-    inset: 0;
-  }
-
-  #book[data-layout="single"] #pageflip-canvas,
-  #book[data-layout="single"] #pages section {
-    display: none;
-  }
-
-  #book[data-layout="single"] #pages section.is-current {
-    display: block;
-    position: relative;
-    inset: auto;
-    width: 100% !important;
-    height: 100%;
-    box-shadow: 0 8px 24px #0003;
-  }
-
-  #book[data-layout="single"] #pages section > div {
-    display: none;
-    box-sizing: border-box;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    touch-action: pan-y;
-    padding: 24px 0;
-    font-size: 17px;
-  }
-
-  #book[data-layout="single"] #pages [data-face="front"] > .page-front,
-  #book[data-layout="single"] #pages [data-face="back"] > .page-back {
-    display: block;
-  }
-
-  #book[data-layout="single"] #pages p,
-  #book[data-layout="single"] #pages h2 {
-    padding: 6px 24px;
-    line-height: 1.7;
-    text-align: left;
-  }
-
-  #book[data-layout="single"] #pages .cover {
-    padding-top: 60px;
-  }
-
-  #book[data-layout="single"] #pages .cover h2 {
-    font-size: clamp(28px, 8vw, 38px);
-  }
-
+.demo-book[data-layout="single"] .demo-page.cover h2 {
+	font-size: clamp(28px, 8vw, 38px);
 }

@@ -1,0 +1,99 @@
+.bf-viewport {
+	position: relative;
+	width: 100%;
+	height: 100dvh;
+	overflow: hidden;
+}
+.bf-book {
+	position: absolute;
+	width: var(--book-width);
+	height: var(--book-height);
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) scale(var(--book-scale, 1))
+		translateX(var(--book-offset, calc(-0.5 * var(--page-width))));
+	touch-action: none;
+	user-select: none;
+}
+.bf-pages > .bf-sheet {
+	background: white;
+	width: var(--page-width);
+	height: var(--page-height);
+	position: absolute;
+	left: 50%;
+	top: var(--page-top);
+	overflow: hidden;
+}
+.bf-sheet > .bf-face {
+	display: block;
+	box-sizing: border-box;
+	width: var(--page-width);
+	height: var(--page-height);
+	overflow: hidden;
+}
+.bf-sheet > .bf-back {
+	display: none;
+}
+.bf-canvas {
+	position: absolute;
+	top: calc(-1 * var(--canvas-padding));
+	left: calc(-1 * var(--canvas-padding));
+	z-index: 100;
+	pointer-events: none;
+}
+.bf-single-canvas {
+	position: absolute;
+	inset: 0;
+	z-index: 101;
+	pointer-events: none;
+}
+.bf-book.is-turning > .bf-pages {
+	visibility: hidden;
+}
+.bf-viewport[data-layout="single"] {
+	box-sizing: border-box;
+	height: auto;
+	overflow: visible;
+	padding: 5vh 12px;
+}
+.bf-book[data-layout="single"] {
+	position: relative;
+	inset: auto;
+	width: 92%;
+	max-width: min(
+		calc(var(--page-width) * 0.92),
+		calc((100dvh - 64px) * var(--page-ratio))
+	);
+	height: auto;
+	aspect-ratio: var(--page-ratio);
+	margin: 0 auto;
+	transform: none;
+	touch-action: pan-y;
+}
+.bf-book[data-layout="single"] > .bf-pages {
+	position: absolute;
+	inset: 0;
+}
+.bf-book[data-layout="single"] > .bf-canvas,
+.bf-book[data-layout="single"] > .bf-pages > .bf-sheet {
+	display: none;
+}
+.bf-book[data-layout="single"] > .bf-pages > .bf-sheet.is-current {
+	display: block;
+	position: relative;
+	inset: auto;
+	width: 100%;
+	height: 100%;
+	box-shadow: 0 8px 24px #0003;
+}
+.bf-book[data-layout="single"] .bf-sheet > .bf-face {
+	display: none;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	touch-action: pan-y;
+}
+.bf-book[data-layout="single"] .bf-sheet[data-face="front"] > .bf-front,
+.bf-book[data-layout="single"] .bf-sheet[data-face="back"] > .bf-back {
+	display: block;
+}

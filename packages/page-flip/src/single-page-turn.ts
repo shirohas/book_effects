@@ -1,21 +1,31 @@
 import { createPageTexture } from "./page-texture";
 
 // Keep readable HTML at rest and render only the moving paper on a sharp canvas.
-export function createSinglePageTurn(book: HTMLElement, options: {
-	getIndex: () => number;
-	setIndex: (index: number) => void;
-	count: number;
-	isEnabled: () => boolean;
-}) {
+export const createSinglePageTurn = (
+	book: HTMLElement,
+	options: {
+		getIndex: () => number;
+		setIndex: (index: number) => void;
+		count: number;
+		pageRatio: number;
+		onCommit: (index: number) => void;
+		isEnabled: () => boolean;
+	},
+) => {
 	const canvas = document.createElement("canvas");
-	canvas.className = "single-page-canvas";
+	canvas.className = "bf-single-canvas";
 	canvas.hidden = true;
 	book.append(canvas);
-	const context = canvas.getContext("2d")!;
+	const context = canvas.getContext("2d");
+	if (!context) {
+		canvas.remove();
+		throw new Error("Canvas 2D is not available.");
+	}
 	let generation = 0;
 	let frame = 0;
 	let busy = false;
-	let pointer: { id: number; x: number; y: number; direction: number } | null = null;
+	let pointer: { id: number; x: number; y: number; direction: number } | null =
+		null;
 	let progress = 0;
 	let target = 0;
 	let released = false;
@@ -27,29 +37,42 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 	let next: HTMLImageElement;
 	let direction = 1;
 
-	function reset() {
+	const reset = () => {
 		generation++;
 		cancelAnimationFrame(frame);
 		const pointerId = pointer?.id;
 		pointer = null;
-		if (pointerId !== undefined && book.hasPointerCapture(pointerId)) book.releasePointerCapture(pointerId);
+		if (pointerId !== undefined && book.hasPointerCapture(pointerId))
+			book.releasePointerCapture(pointerId);
 		busy = ready = false;
 		canvas.hidden = true;
 		book.classList.remove("is-turning");
-	}
+	};
 
-	function snapshot() {
-		const face = book.querySelector<HTMLElement>("section.is-current > ." +
-			(options.getIndex() % 2 ? "page-back" : "page-front"))!;
+	const snapshot = () => {
+		const face = book.querySelector<HTMLElement>(
+			" .bf-sheet.is-current > ." +
+				(options.getIndex() % 2 ? "bf-back" : "bf-front"),
+		);
+		if (!face) throw new Error("Current page face is missing.");
 		const bounds = face.getBoundingClientRect();
-		return { image: createPageTexture(face, bounds.width, bounds.height), height: bounds.height };
-	}
+		return {
+			image: createPageTexture(face, bounds.width, bounds.height),
+			height: bounds.height,
+		};
+	};
 
-	function paint() {
+	const paint = () => {
 		context.clearRect(0, 0, width, height);
 		context.fillStyle = "white";
 		context.fillRect(0, 0, width, height);
-		context.drawImage(next, 0, 0, width, next.naturalHeight / next.naturalWidth * width);
+		context.drawImage(
+			next,
+			0,
+			0,
+			width,
+			(next.naturalHeight / next.naturalWidth) * width,
+		);
 		const fold = width * (1 - progress);
 		const curl = Math.min(fold, Math.sin(progress * Math.PI) * width * 0.32);
 		const edge = direction > 0 ? fold : width - fold;
@@ -59,11 +82,20 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 		context.clip();
 		context.fillStyle = "white";
 		context.fillRect(0, 0, width, height);
-		context.drawImage(front, 0, 0, width, front.naturalHeight / front.naturalWidth * width);
+		context.drawImage(
+			front,
+			0,
+			0,
+			width,
+			(front.naturalHeight / front.naturalWidth) * width,
+		);
 		context.restore();
 		if (curl < 0.1) return;
 		context.save();
-		if (direction < 0) { context.translate(width, 0); context.scale(-1, 1); }
+		if (direction < 0) {
+			context.translate(width, 0);
+			context.scale(-1, 1);
+		}
 		const lift = Math.sin(progress * Math.PI) * 24;
 		const shadow = context.createLinearGradient(fold, 0, fold + curl * 0.6, 0);
 		shadow.addColorStop(0, "rgba(0,0,0,.28)");
@@ -84,21 +116,24 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 		context.fillStyle = paper;
 		context.fill();
 		context.restore();
-	}
+	};
 
-	function tick() {
+	const tick = () => {
 		if (!ready) return;
 		progress += (target - progress) * 0.22;
 		if (released && Math.abs(progress - target) < 0.003) {
-			if (target === 1) options.setIndex(destination);
+			if (target === 1) {
+				options.setIndex(destination);
+				options.onCommit(destination);
+			}
 			reset();
 			return;
 		}
 		paint();
 		frame = requestAnimationFrame(tick);
-	}
+	};
 
-	async function start(step: number, automatic: boolean) {
+	const start = async (step: number, automatic: boolean) => {
 		if (busy || !options.isEnabled()) return;
 		const origin = options.getIndex();
 		destination = origin + step;
@@ -115,7 +150,7 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 			const upcoming = snapshot();
 			options.setIndex(origin);
 			width = book.getBoundingClientRect().width;
-			height = width * 7 / 5;
+			height = width / options.pageRatio;
 			const textures = await Promise.all([current.image, upcoming.image]);
 			if (generation !== token) return;
 			[front, next] = textures;
@@ -135,28 +170,41 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 			reset();
 			console.error("Could not render page turn", error);
 		}
-	}
+	};
 
-	function down(event: PointerEvent) {
-		if (!options.isEnabled() || busy || !event.isPrimary || event.button !== 0) return;
-		pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, direction: 0 };
+	const down = (event: PointerEvent) => {
+		if (!options.isEnabled() || busy || !event.isPrimary || event.button !== 0)
+			return;
+		pointer = {
+			id: event.pointerId,
+			x: event.clientX,
+			y: event.clientY,
+			direction: 0,
+		};
 		// Capture on the stable book before snapshots temporarily hide either face.
 		book.setPointerCapture(event.pointerId);
-	}
-	function move(event: PointerEvent) {
+	};
+	const move = (event: PointerEvent) => {
 		if (pointer?.id !== event.pointerId) return;
 		const dx = event.clientX - pointer.x;
 		const dy = event.clientY - pointer.y;
 		if (!pointer.direction) {
-			if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { pointer = null; return; }
+			if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
+				pointer = null;
+				return;
+			}
 			if (Math.abs(dx) < 10) return;
 			pointer.direction = dx < 0 ? 1 : -1;
 			book.setPointerCapture(event.pointerId);
 			void start(pointer.direction, false);
 		}
-		if (busy) target = Math.max(0, Math.min(1, -dx * pointer.direction / (width || book.clientWidth)));
-	}
-	function up(event: PointerEvent) {
+		if (busy)
+			target = Math.max(
+				0,
+				Math.min(1, (-dx * pointer.direction) / (width || book.clientWidth)),
+			);
+	};
+	const up = (event: PointerEvent) => {
 		if (pointer?.id !== event.pointerId) return;
 		// A fast swipe may end beyond the last pointermove position.
 		if (busy) {
@@ -165,14 +213,18 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 			released = true;
 		}
 		pointer = null;
-		if (book.hasPointerCapture(event.pointerId)) book.releasePointerCapture(event.pointerId);
-	}
-	function cancel(event: PointerEvent) {
+		if (book.hasPointerCapture(event.pointerId))
+			book.releasePointerCapture(event.pointerId);
+	};
+	const cancel = (event: PointerEvent) => {
 		if (event.type === "lostpointercapture" && event.target !== book) return;
 		if (pointer?.id !== event.pointerId) return;
 		pointer = null;
-		if (busy) { target = 0; released = true; }
-	}
+		if (busy) {
+			target = 0;
+			released = true;
+		}
+	};
 	book.addEventListener("pointerdown", down);
 	book.addEventListener("pointermove", move);
 	book.addEventListener("pointerup", up);
@@ -180,9 +232,11 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 	book.addEventListener("lostpointercapture", cancel);
 	window.addEventListener("resize", reset);
 	return {
-		turn: (step: number) => { void start(step, true); },
+		turn: (step: number) => {
+			void start(step, true);
+		},
 		reset,
-		dispose() {
+		dispose: () => {
 			reset();
 			canvas.remove();
 			book.removeEventListener("pointerdown", down);
@@ -193,4 +247,4 @@ export function createSinglePageTurn(book: HTMLElement, options: {
 			window.removeEventListener("resize", reset);
 		},
 	};
-}
+};

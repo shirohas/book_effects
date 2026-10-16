@@ -1,12 +1,30 @@
-export const PAGE_WIDTH = 400;
-export const PAGE_HEIGHT = (PAGE_WIDTH * 7) / 5;
-export const BOOK_WIDTH = PAGE_WIDTH * 2 + 30;
-export const BOOK_HEIGHT = PAGE_HEIGHT + 10;
-export const PAGE_Y = (BOOK_HEIGHT - PAGE_HEIGHT) / 2;
-export const CANVAS_PADDING = 60;
+export const createLayout = (
+	pageWidth: number,
+	canvasPadding: number,
+	pageRatio: number,
+) => {
+	const PAGE_WIDTH = pageWidth;
+	const PAGE_HEIGHT = pageWidth / pageRatio;
+	const BOOK_WIDTH = PAGE_WIDTH * 2 + 30;
+	const BOOK_HEIGHT = PAGE_HEIGHT + 10;
+	return {
+		PAGE_WIDTH,
+		PAGE_HEIGHT,
+		BOOK_WIDTH,
+		BOOK_HEIGHT,
+		PAGE_Y: 5,
+		CANVAS_PADDING: canvasPadding,
+	};
+};
+export type BookLayout = ReturnType<typeof createLayout>;
 const VIEWPORT_GAP = 16;
 
-export function fitBookToViewport(book: HTMLElement, viewport: HTMLElement) {
+export const fitBookToViewport = (
+	book: HTMLElement,
+	viewport: HTMLElement,
+	layout: BookLayout,
+) => {
+	const { BOOK_WIDTH, BOOK_HEIGHT, CANVAS_PADDING } = layout;
 	const updateScale = () => {
 		const width = Math.max(0, viewport.clientWidth - VIEWPORT_GAP * 2);
 		const height = Math.max(0, viewport.clientHeight - VIEWPORT_GAP * 2);
@@ -21,9 +39,17 @@ export function fitBookToViewport(book: HTMLElement, viewport: HTMLElement) {
 	observer.observe(viewport);
 	updateScale();
 	return () => observer.disconnect();
-}
+};
 
-export function applyBookLayout(book: HTMLElement) {
+export const applyBookLayout = (book: HTMLElement, layout: BookLayout) => {
+	const {
+		PAGE_WIDTH,
+		PAGE_HEIGHT,
+		BOOK_WIDTH,
+		BOOK_HEIGHT,
+		PAGE_Y,
+		CANVAS_PADDING,
+	} = layout;
 	const dimensions = {
 		"page-width": PAGE_WIDTH,
 		"page-height": PAGE_HEIGHT,
@@ -36,4 +62,4 @@ export function applyBookLayout(book: HTMLElement) {
 	for (const [name, value] of Object.entries(dimensions)) {
 		book.style.setProperty(`--${name}`, `${value}px`);
 	}
-}
+};

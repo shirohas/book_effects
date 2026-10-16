@@ -1,14 +1,19 @@
-import { PAGE_HEIGHT, PAGE_WIDTH } from "./layout";
-
 // Capture the existing markup with its computed styles, including text wrapping.
-export function createPageTexture(source: HTMLElement, width = PAGE_WIDTH, height = PAGE_HEIGHT): Promise<HTMLImageElement> {
+export const createPageTexture = (
+	source: HTMLElement,
+	width: number,
+	height: number,
+): Promise<HTMLImageElement> => {
 	const clone = source.cloneNode(true) as HTMLElement;
 	const originals = [source, ...source.querySelectorAll<HTMLElement>("*")];
 	const copies = [clone, ...clone.querySelectorAll<HTMLElement>("*")];
 	originals.forEach((original, index) => {
 		const style = getComputedStyle(original);
 		for (const property of Array.from(style)) {
-			copies[index].style.setProperty(property, style.getPropertyValue(property));
+			copies[index].style.setProperty(
+				property,
+				style.getPropertyValue(property),
+			);
 		}
 	});
 	// Reverse faces are hidden in the DOM and only shown by the canvas renderer.
@@ -25,4 +30,4 @@ export function createPageTexture(source: HTMLElement, width = PAGE_WIDTH, heigh
 		image.onerror = () => reject(new Error("Could not capture page content."));
 		image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 	});
-}
+};

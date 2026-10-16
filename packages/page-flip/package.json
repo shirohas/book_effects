@@ -1,0 +1,17 @@
+{
+	"name": "@book-effects/page-flip",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./style.css": "./src/style.css"
+	},
+	"sideEffects": [
+		"**/*.css"
+	],
+	"peerDependencies": {
+		"react": ">=18 <20",
+		"react-dom": ">=18 <20"
+	}
+}
