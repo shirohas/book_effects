@@ -9,6 +9,7 @@ import "@book-effects/page-flip/style.css";
 <PageFlip
   pageWidth={516}
   canvasPadding={30}
+  isSE={true}
   pageRatio={5 / 7}
   mobileBreakpoint={700}
   onPageChange={(page) => console.log(page)}
@@ -41,6 +42,7 @@ import "@book-effects/page-flip/style.css";
 | `children` | `ReactNode` | 必須 | 読む順に並べた面 |
 | `pageRatio` | `number` | `5 / 7` | 幅÷高さ |
 | `mobileBreakpoint` | `number` | `700` | 片面表示に切り替えるコンテナ幅（px） |
+| `isSE` | `boolean` | `false` | ページめくりSEの有効化 |
 | `initialPage` | `number` | `0` | 初期表示する面。0始まり、マウント時のみ適用 |
 | `onPageChange` | `(page: number) => void` | — | めくり確定後の面番号。見開きは左側の面番号 |
 | `className`, `style` | React標準型 | — | 外側コンテナの調整 |
@@ -59,3 +61,7 @@ Reactのchildrenを更新すると描画を再初期化しますが、子コン�
 ライフサイクルでは[ReactのEffectのクリーンアップ](https://react.dev/reference/react/useEffect)に合わせてイベント・タイマー・Observer・進行中アニメーションを破棄します。
 
 今後必要になった時に追加する候補は、`page`（制御コンポーネント化）、`onError`（画像転写エラー通知）、`animationDuration`（速度）、`direction`（右綴じ／左綴じ）です。
+
+## ページめくりSE
+
+`isSE={true}`で、めくりが確定する指・マウスのリリース時に短い紙の音を鳴らします。Web Audioで合成するため音声ファイルは不要です。短いドラッグやキャンセルでは鳴りません。表示中にfalseにすると再生中の音も停止し、現在のページは保持します。操作時にAudioContextを初期化し、無効化・アンマウント時に解放します。ブラウザ側で音声が許可されない場合もページ操作は継続します。

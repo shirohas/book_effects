@@ -4,14 +4,16 @@ import { PageFlip } from "@book-effects/page-flip";
 import "@book-effects/page-flip/style.css";
 
 const Fixture = () => {
+  const [isSE, setIsSE] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [width, setWidth] = useState(300);
   const [selected, setSelected] = useState(-1);
   return <>
+    <button id="sound" onClick={() => setIsSE(!isSE)}>Sound</button>
     <button id="toggle" onClick={() => setMounted(!mounted)}>Mount</button>
     <button id="resize" onClick={() => setWidth(340)}>Resize</button>
     <output id="selected">{selected}</output>
-    {mounted && <PageFlip className="first" pageWidth={width} canvasPadding={12}
+    {mounted && <PageFlip className="first" isSE={isSE} pageWidth={width} canvasPadding={12}
       pageRatio={0.75} mobileBreakpoint={600} onPageChange={setSelected}
       style={{ width: 380, minHeight: 0, height: 560 }}>
       <section>Cover <strong>nested section</strong></section>

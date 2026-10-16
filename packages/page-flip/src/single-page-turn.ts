@@ -9,18 +9,23 @@ export const createSinglePageTurn = (
 		count: number;
 		pageRatio: number;
 		onCommit: (index: number) => void;
+		prepareSound: () => void;
+		playSound: () => void;
 		isEnabled: () => boolean;
 	},
 ) => {
 	const canvas = document.createElement("canvas");
 	canvas.className = "bf-single-canvas";
 	canvas.hidden = true;
+
 	book.append(canvas);
 	const context = canvas.getContext("2d");
+
 	if (!context) {
 		canvas.remove();
 		throw new Error("Canvas 2D is not available.");
 	}
+
 	let generation = 0;
 	let frame = 0;
 	let busy = false;
@@ -182,6 +187,7 @@ export const createSinglePageTurn = (
 			y: event.clientY,
 			direction: 0,
 		};
+		options.prepareSound();
 		// Capture on the stable book before snapshots temporarily hide either face.
 		book.setPointerCapture(event.pointerId);
 	};
@@ -211,6 +217,7 @@ export const createSinglePageTurn = (
 		if (busy) {
 			const distance = (pointer.x - event.clientX) * pointer.direction;
 			target = distance >= Math.min(60, book.clientWidth * 0.2) ? 1 : 0;
+			if (target === 1) options.playSound();
 			released = true;
 		}
 		pointer = null;

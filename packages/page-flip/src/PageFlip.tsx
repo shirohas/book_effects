@@ -9,6 +9,7 @@ import {
 } from "react";
 import { initializeBook } from "./engine";
 import { createLayout } from "./layout";
+import { createPageTurnSound } from "./page-turn-sound";
 
 export interface PageFlipProps {
 	children: ReactNode;
@@ -20,6 +21,8 @@ export interface PageFlipProps {
 	mobileBreakpoint?: number;
 	/** Zero-based face index, read on mount. */
 	initialPage?: number;
+	/** Enable the page-turn sound. Default: false. */
+	isSE?: boolean;
 	onPageChange?: (page: number) => void;
 	className?: string;
 	style?: CSSProperties;
@@ -33,6 +36,7 @@ export const PageFlip = ({
 	pageRatio = 5 / 7,
 	mobileBreakpoint = 700,
 	initialPage = 0,
+	isSE = false,
 	onPageChange,
 	className,
 	style,
@@ -73,6 +77,16 @@ export const PageFlip = ({
 	const canvas = useRef<HTMLCanvasElement>(null);
 	const selected = useRef(initialPage);
 	const callback = useRef(onPageChange);
+	const sound = useRef<ReturnType<typeof createPageTurnSound> | null>(null);
+	useEffect(() => {
+		if (!isSE) return;
+		const instance = createPageTurnSound();
+		sound.current = instance;
+		return () => {
+			sound.current = null;
+			instance.dispose();
+		};
+	}, [isSE]);
 	useEffect(() => {
 		callback.current = onPageChange;
 	}, [onPageChange]);
@@ -92,6 +106,8 @@ export const PageFlip = ({
 				mobileBreakpoint,
 				pageRatio,
 				initialPage: selected.current,
+				prepareSound: () => sound.current?.prepare(),
+				playSound: () => sound.current?.play(),
 				onPageChange: (page) => {
 					selected.current = page;
 					callback.current?.(page);

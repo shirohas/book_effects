@@ -13,6 +13,14 @@ ws.addEventListener('message', event => {
 const send = (method, params={}) => { return new Promise((resolve,reject) => { pending.set(++id,{resolve,reject}); ws.send(JSON.stringify({id,method,params})); }); };
 const pause = ms => new Promise(resolve => setTimeout(resolve,ms));
 const evaluate = async (expression) => { const r = await send('Runtime.evaluate',{expression,returnByValue:true}); if(r.exceptionDetails) throw Error(JSON.stringify(r.exceptionDetails)); return r.result.value; };
+await send('Page.enable');
+await send('Page.addScriptToEvaluateOnNewDocument', {source: `
+window.soundStarts = 0; window.soundCloses = 0;
+const originalStart = AudioBufferSourceNode.prototype.start;
+AudioBufferSourceNode.prototype.start = function(...args) { window.soundStarts++; return originalStart.apply(this, args); };
+const originalClose = AudioContext.prototype.close;
+AudioContext.prototype.close = function(...args) { window.soundCloses++; return originalClose.apply(this, args); };
+`});
 await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true});
 await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
 await send('Page.navigate',{url:testUrl});
@@ -47,6 +55,14 @@ try {
   await evaluate("document.querySelector('#toggle').click()");await pause(200);assert.equal((await fixture()).canvases,1);
   await evaluate("document.querySelector('#toggle').click()");await pause(300);assert.equal((await fixture()).canvases,2);assert.equal((await fixture()).index,0);
   await swipe(280,70,150);assert.equal((await fixture()).index,1);
+  assert.equal(await evaluate('window.soundStarts'),0);
+  await evaluate("document.querySelector('#sound').click()");await pause(100);
+  await swipe(280,70,150);assert.equal(await evaluate('window.soundStarts'),1);
+  await swipe(280,260,150);assert.equal(await evaluate('window.soundStarts'),1);
+  await evaluate("document.querySelector('#sound').click()");await pause(100);
+  assert.equal(await evaluate('window.soundCloses'),1);
+  await swipe(70,280,150);assert.equal(await evaluate('window.soundStarts'),1);
+  console.log('PASS: SE enable, disable, cancelled swipe, audio cleanup');
   console.log('PASS: independent instances, nested content, custom ratio, callback, props changes, StrictMode cleanup, unmount/remount');
   await send('Page.navigate',{url:testUrl});await pause(400);
   for (const [width,height] of [[320,568],[390,844],[458,844],[459,844],[458,600],[390,420],[390,360],[700,600],[600,390]]) {

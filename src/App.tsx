@@ -2,7 +2,7 @@ import { PageFlip } from "@book-effects/page-flip";
 
 export const App = () => {
 	return (
-		<PageFlip pageWidth={516} canvasPadding={30} className="demo-book">
+		<PageFlip pageWidth={516} canvasPadding={30} className="demo-book" isSE>
 			<div className="demo-page cover">
 				<p className="cover-label">CANVAS NOTES</p>
 				<h2>The Canvas Book</h2>

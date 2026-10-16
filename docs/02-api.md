@@ -31,6 +31,7 @@ const Example = () => (
 | `canvasPadding` | `30` | 見開きCanvasの周囲の描画余白。CSS px |
 | `pageRatio` | `5 / 7` | 幅÷高さ。高さは幅をこの値で割る |
 | `mobileBreakpoint` | `700` | 片面に切り替える外側コンテナの幅。px |
+| `isSE` | `false` | めくり確定時のSE。Web Audioで紙の音を合成 |
 | `initialPage` | `0` | 初期面番号。0始まり |
 | `onPageChange` | 未指定 | 確定した面番号を受け取る通知関数 |
 | `className` / `style` | 未指定 | 外側コンテナへの装飾と寸法指定 |

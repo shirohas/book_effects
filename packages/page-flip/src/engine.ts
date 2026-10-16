@@ -23,6 +23,8 @@ export const initializeBook = (
 		mobileBreakpoint: number;
 		pageRatio: number;
 		initialPage: number;
+		prepareSound: () => void;
+		playSound: () => void;
 		onPageChange: (page: number) => void;
 	},
 ) => {
@@ -34,10 +36,13 @@ export const initializeBook = (
 		PAGE_WIDTH,
 		PAGE_Y,
 	} = layout;
+
 	let disposed = false;
 	let pendingPage: number | null = null;
+
 	const canvasContext = canvas.getContext("2d");
 	if (!canvasContext) throw new Error("Canvas 2D is not available.");
+
 	const context = canvasContext;
 
 	applyBookLayout(book, layout);
@@ -77,54 +82,69 @@ export const initializeBook = (
 		count: pages.length * 2,
 		pageRatio: options.pageRatio,
 		onCommit: options.onPageChange,
+		prepareSound: options.prepareSound,
+		playSound: options.playSound,
 		isEnabled: () => singlePage,
 	});
 
 	const updateMode = () => {
 		const narrow = viewport.clientWidth <= options.mobileBreakpoint;
 		if (!firstLayout && narrow === singlePage) return;
+
 		singleTurn.reset();
+
 		if (activePointer !== null && book.hasPointerCapture(activePointer)) {
 			book.releasePointerCapture(activePointer);
 		}
+
 		activeFlip = null;
 		activePointer = null;
+
 		if (!firstLayout && narrow && !singlePage) {
 			faceIndex = Math.max(0, currentPage * 2 - 1);
 		} else if (!narrow && singlePage) {
 			currentPage = Math.floor((faceIndex + 1) / 2);
 		}
+
 		singlePage = narrow;
 		if (singlePage) {
 			for (const flip of flips) flip.element.style.removeProperty("width");
 		}
+
 		firstLayout = false;
 		viewport.dataset.layout = singlePage ? "single" : "spread";
 		book.dataset.layout = singlePage ? "single" : "spread";
+
 		if (!singlePage) {
 			void document.fonts.ready
 				.then(async () => {
 					if (singlePage || disposed) return;
+
 					await Promise.all(
 						flips.map(async (flip) => {
 							const back = flip.element.querySelector<HTMLElement>(".bf-back");
+
 							if (!back) throw new Error("Page is missing its reverse face.");
 							const texture = await createPageTexture(
 								back,
 								PAGE_WIDTH,
 								PAGE_HEIGHT,
 							);
+
 							if (!disposed) flip.backTexture = texture;
 						}),
 					);
 				})
 				.catch(console.error);
 		}
+
 		flips.forEach((flip, index) => {
 			flip.progress = flip.target = index < currentPage ? -1 : 1;
 		});
+
 		showFace();
 	};
+
 	const modeObserver = new ResizeObserver(updateMode);
 	modeObserver.observe(viewport);
 	updateMode();
@@ -132,6 +152,7 @@ export const initializeBook = (
 	const getPosition = (event: PointerEvent) => {
 		const bounds = book.getBoundingClientRect();
 		const scale = bounds.width / BOOK_WIDTH || 1;
+
 		return {
 			x: (event.clientX - bounds.left) / scale - BOOK_WIDTH / 2,
 			y: (event.clientY - bounds.top) / scale - PAGE_Y,
@@ -147,6 +168,7 @@ export const initializeBook = (
 		if (singlePage) return;
 		if (event.button !== 0 || activeFlip !== null) return;
 		if (flips.some((flip) => flip.progress !== flip.target)) return;
+
 		const { x, y } = getPosition(event);
 		if (Math.abs(x) >= PAGE_WIDTH || y < 0 || y > PAGE_HEIGHT) return;
 
@@ -155,7 +177,10 @@ export const initializeBook = (
 		} else if (x > 0 && currentPage < flips.length) {
 			activeFlip = currentPage;
 		}
+
 		if (activeFlip === null) return;
+
+		options.prepareSound();
 		activePointer = event.pointerId;
 		book.setPointerCapture(event.pointerId);
 		mouseX = x;
@@ -165,8 +190,12 @@ export const initializeBook = (
 	const handlePointerUp = (event: PointerEvent) => {
 		if (singlePage) return;
 		if (activeFlip === null || event.pointerId !== activePointer) return;
+
 		mouseX = getPosition(event).x;
 		const turned = mouseX < 0;
+
+		if (activeFlip + (turned ? 1 : 0) !== currentPage) options.playSound();
+
 		flips[activeFlip].target = turned ? -1 : 1;
 		currentPage = activeFlip + (turned ? 1 : 0);
 		pendingPage = Math.max(0, currentPage * 2 - 1);
@@ -177,9 +206,11 @@ export const initializeBook = (
 
 	const handlePointerCancel = (event: PointerEvent) => {
 		if (activeFlip === null || event.pointerId !== activePointer) return;
+
 		flips[activeFlip].target = activeFlip < currentPage ? -1 : 1;
 		activeFlip = null;
 		activePointer = null;
+
 		if (book.hasPointerCapture(event.pointerId)) {
 			book.releasePointerCapture(event.pointerId);
 		}
@@ -187,6 +218,7 @@ export const initializeBook = (
 
 	const render = () => {
 		if (singlePage) return;
+
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		flips.forEach((flip, index) => {
 			const dragging = activeFlip === index;
@@ -201,6 +233,7 @@ export const initializeBook = (
 			) {
 				flip.progress = flip.target;
 			}
+
 			const visibleWidth = (PAGE_WIDTH * (1 + flip.progress)) / 2;
 			flip.element.style.width = `${visibleWidth}px`;
 		});
@@ -208,10 +241,12 @@ export const initializeBook = (
 		// Center a closed cover; smoothly expand to a spread as it opens.
 		const frontClosed = (1 + flips[0].progress) / 2;
 		const backClosed = (1 - flips[flips.length - 1].progress) / 2;
+
 		book.style.setProperty(
 			"--book-offset",
 			`${(PAGE_WIDTH / 2) * (backClosed - frontClosed)}px`,
 		);
+
 		book.dataset.state =
 			frontClosed === 1
 				? "front-cover"
@@ -222,12 +257,14 @@ export const initializeBook = (
 		// Update positions before painting, including the frame a sheet settles.
 		const settled = flips.filter((flip) => flip.progress === -1);
 		const leftPage = settled[settled.length - 1];
+
 		if (leftPage) drawFlip(context, -1, layout, leftPage.backTexture);
 		flips.forEach((flip, index) => {
 			if (activeFlip === index || Math.abs(flip.progress) < 1) {
 				drawFlip(context, flip.progress, layout, flip.backTexture);
 			}
 		});
+
 		if (
 			pendingPage !== null &&
 			activeFlip === null &&
