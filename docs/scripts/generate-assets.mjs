@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+
 const directory = new URL("../assets/", import.meta.url);
 await mkdir(directory, { recursive: true });
 const escape = (value) =>
@@ -223,7 +224,7 @@ await save(
 			"幅と高さの両方から収まる倍率を選ぶ",
 		]),
 		box(380, 285, 540, 140, "700px以下 → 片面", [
-			"幅92%・pageWidthの92%・高さ上限を比較",
+			"基本は幅92%、画面458px以下は100%",
 			"height = width / pageRatio",
 			"本文は折り返し直し、必要なら面内スクロール",
 		]),

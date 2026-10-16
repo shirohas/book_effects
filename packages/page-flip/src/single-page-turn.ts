@@ -149,8 +149,9 @@ export const createSinglePageTurn = (
 			options.setIndex(destination);
 			const upcoming = snapshot();
 			options.setIndex(origin);
-			width = book.getBoundingClientRect().width;
-			height = width / options.pageRatio;
+			const bounds = book.getBoundingClientRect();
+			width = bounds.width;
+			height = bounds.height;
 			const textures = await Promise.all([current.image, upcoming.image]);
 			if (generation !== token) return;
 			[front, next] = textures;

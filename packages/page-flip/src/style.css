@@ -70,6 +70,17 @@
 	transform: none;
 	touch-action: pan-y;
 }
+@media (max-width: 458px) {
+	.bf-viewport[data-layout="single"] {
+		padding: 5dvh 12px;
+	}
+	.bf-book[data-layout="single"] {
+		width: 100%;
+		max-width: none;
+		height: 90dvh;
+		aspect-ratio: auto;
+	}
+}
 .bf-book[data-layout="single"] > .bf-pages {
 	position: absolute;
 	inset: 0;
